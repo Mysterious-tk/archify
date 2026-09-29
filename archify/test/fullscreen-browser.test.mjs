@@ -188,4 +188,25 @@ test('diagram fullscreen uses native state and preserves viewer contracts', {
     await exited();
     assert.deepEqual(await run('fullscreenErrors'), []);
   });
+
+  await t.test('rejected exit keeps fullscreen state and announces the attempted transition', async () => {
+    for (const mode of ['architecture', 'workflow']) {
+      await load(mode);
+      await enter();
+      await run(`window.nativeExitFullscreen = document.exitFullscreen;
+        document.exitFullscreen = () => Promise.reject(new Error('Exit denied'));`);
+      await click('#btn-fullscreen');
+      await run(`fullscreenWait(() => !document.getElementById('fullscreen-status').hidden)`);
+      assert.equal(await run(`document.fullscreenElement === document.querySelector('.diagram-container')`), true);
+      assert.equal(await run(`document.getElementById('btn-fullscreen').getAttribute('aria-pressed')`), 'true');
+      assert.equal(await run(`document.getElementById('fullscreen-status').textContent`), mode === 'workflow'
+        ? '退出全屏失败，请重试或按 Esc。'
+        : 'Could not exit fullscreen. Try again or press Esc.');
+      await run('document.exitFullscreen = nativeExitFullscreen');
+      await click('#btn-fullscreen');
+      await exited();
+      assert.equal(await run(`document.getElementById('fullscreen-status').hidden`), true);
+      assert.deepEqual(await run('fullscreenErrors'), []);
+    }
+  });
 });

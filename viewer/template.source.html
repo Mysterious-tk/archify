@@ -1202,8 +1202,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (pending) return;
         pending = true;
         status.hidden = true;
+        var exiting = document.fullscreenElement === container;
         try {
-          if (document.fullscreenElement === container) {
+          if (exiting) {
             await document.exitFullscreen();
           } else {
             previousScroll = { x: window.scrollX, y: window.scrollY };
@@ -1212,7 +1213,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           }
         } catch (_) {
           // Permission/policy failures must not leave a false pressed state.
-          status.textContent = viewerText('viewer.fullscreen.failed');
+          status.textContent = viewerText(exiting ? 'viewer.fullscreen.exitFailed' : 'viewer.fullscreen.failed');
           status.hidden = false;
         } finally {
           pending = false;
